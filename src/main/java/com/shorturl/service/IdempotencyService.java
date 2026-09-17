@@ -1,10 +1,10 @@
 package com.shorturl.service;
 
 import com.shorturl.entity.IdempotencyRequest;
-import com.shorturl.entity.IdempotencyRequestRepository;
 import com.shorturl.entity.IdempotencyStatus;
 import com.shorturl.exception.IdempotencyKeyConflictException;
 import com.shorturl.exception.IdempotencyRequestInProgressException;
+import com.shorturl.repository.IdempotencyRequestRepository;
 import com.shorturl.util.HashUtil;
 import org.springframework.stereotype.Service;
 
@@ -36,8 +36,8 @@ public class IdempotencyService {
         request.setIdempotencyKey(idempotencyKey);
         request.setRequestHash(requestHash);
         request.setStatus(IdempotencyStatus.PROCESSING);
-        request.setCreatedAt(LocalDateTime.now(TimeZone.getTimeZone("UTC").toZoneId()));
-        request.setExpiresAt(LocalDateTime.now(TimeZone.getTimeZone("UTC").toZoneId()).plusHours(EXPIRY_HOURS));
+        request.setCreatedAt(LocalDateTime.now());
+        request.setExpiresAt(LocalDateTime.now().plusHours(EXPIRY_HOURS));
 
         try{
             return repository.saveAndFlush(request);

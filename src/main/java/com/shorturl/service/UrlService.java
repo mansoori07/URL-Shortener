@@ -75,7 +75,7 @@ public class UrlService {
          * Another instance may have won the race.
          */
 
-        if(idempotencyRequest.getIdempotencyKey().equals(idempotencyKey)){
+        if(!idempotencyRequest.getIdempotencyKey().equals(idempotencyKey)){
             throw new IllegalArgumentException("Unexpected Idempotency key");
         }
 

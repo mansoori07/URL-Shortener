@@ -6,7 +6,7 @@ spring:
     name: url-shortener
 
   datasource:
-    url: jdbc:postgresql://localhost:55432/url_shortener?options=-c%20TimeZone=Asia/Kolkata
+    url: jdbc:postgresql://localhost:55432/url_shortener
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -19,6 +19,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          time_zone: Asia/Kolkata
 
   data:
     redis:

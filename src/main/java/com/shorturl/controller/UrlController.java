@@ -2,6 +2,7 @@ package com.shorturl.controller;
 
 import com.shorturl.dto.CreateUrlRequest;
 import com.shorturl.dto.CreateUrlResponse;
+import com.shorturl.service.UrlCreationTransactionService;
 import com.shorturl.service.UrlService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import java.util.concurrent.Future;
 @RequiredArgsConstructor
 public class UrlController {
     private final UrlService urlService;
+    private final UrlCreationTransactionService urlCreationTransactionService;
 
     @GetMapping("/{shortCode}")
     public ResponseEntity<Void> redirect(@PathVariable String shortCode) {
@@ -44,7 +46,7 @@ public class UrlController {
     @ResponseStatus(HttpStatus.CREATED)
     public CreateUrlResponse createUrl(@Valid @RequestBody CreateUrlRequest request,
                                        @RequestHeader(value = "Idempotency-Key", required = true) String idempotencyKey){
-        return urlService.createShortUrl(request, idempotencyKey);
+        return urlCreationTransactionService.create(request, idempotencyKey);
     }
 
     @PostMapping("/list")
@@ -61,7 +63,7 @@ public class UrlController {
         List<Future<CreateUrlResponse>> futures = new ArrayList<>();
 
         for(CreateUrlRequest request : requests){
-            futures.add(executor.submit(() -> urlService.createShortUrl(request, idempotencyKey)));
+            futures.add(executor.submit(() -> urlCreationTransactionService.create(request, idempotencyKey)));
         }
 
         for(Future<CreateUrlResponse> future : futures){
