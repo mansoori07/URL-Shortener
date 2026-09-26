@@ -18,9 +18,9 @@ spring:
     show-sql: true
     properties:
       hibernate:
-        format_sql: true
         jdbc:
-          time_zone: Asia/Kolkata
+          time_zone: UTC
+        format_sql: true
 
   data:
     redis:

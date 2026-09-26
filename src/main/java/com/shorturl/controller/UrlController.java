@@ -27,7 +27,6 @@ import java.util.concurrent.Future;
 @RequiredArgsConstructor
 public class UrlController {
     private final UrlService urlService;
-    private final UrlCreationTransactionService urlCreationTransactionService;
 
     @GetMapping("/{shortCode}")
     public ResponseEntity<Void> redirect(@PathVariable String shortCode) {
@@ -46,7 +45,7 @@ public class UrlController {
     @ResponseStatus(HttpStatus.CREATED)
     public CreateUrlResponse createUrl(@Valid @RequestBody CreateUrlRequest request,
                                        @RequestHeader(value = "Idempotency-Key", required = true) String idempotencyKey){
-        return urlCreationTransactionService.create(request, idempotencyKey);
+        return urlService.createShortUrl(request, idempotencyKey);
     }
 
     @PostMapping("/list")
@@ -63,7 +62,7 @@ public class UrlController {
         List<Future<CreateUrlResponse>> futures = new ArrayList<>();
 
         for(CreateUrlRequest request : requests){
-            futures.add(executor.submit(() -> urlCreationTransactionService.create(request, idempotencyKey)));
+            futures.add(executor.submit(() -> urlService.createShortUrl(request, idempotencyKey)));
         }
 
         for(Future<CreateUrlResponse> future : futures){

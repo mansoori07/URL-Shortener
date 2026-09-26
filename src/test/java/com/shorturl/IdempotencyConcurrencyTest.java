@@ -67,7 +67,7 @@ public class IdempotencyConcurrencyTest {
         List<Callable<CreateUrlResponse>> tasks = new ArrayList<>();
 
         for (int i = 0; i < numberOfRequest; i++) {
-            tasks.add(() -> urlService.create(request, idempotencyKey));
+            tasks.add(() -> urlService.createShortUrl(request, idempotencyKey));
         }
 
         List<Future<CreateUrlResponse>> futures = executorService.invokeAll(tasks);

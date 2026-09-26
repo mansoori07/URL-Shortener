@@ -28,10 +28,9 @@ public class UrlCreationTransactionService {
     private final RandomShortCodeGenerator shortCodeGenerator;
 
     @Transactional
-    public CreateUrlResponse create(CreateUrlRequest request, String idempotencyKey) {
+    public CreateUrlResponse createShortUrl(CreateUrlRequest request, String idempotencyKey) {
 
         String requestHash = HashUtil.sha256(request.getOriginalUrl());
-        System.out.println("requestHash: " + requestHash);
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expiresAt = now.plusHours(24);
@@ -43,27 +42,33 @@ public class UrlCreationTransactionService {
                 expiresAt
         );
 
-        System.out.println("inserted: " + inserted);
-
-
+        /*
+         * inserted == 0 means the record already exists, so we can return the existing short URL
+         */
         if(inserted == 0){
 
-            System.out.println("Insertion is 0");
             IdempotencyRequest existing = idempotencyRepository.findByIdempotencyKey(idempotencyKey)
                     .orElseThrow(() -> new IllegalArgumentException("Failed to retrieve idempotency record for key: " + idempotencyKey));
 
-
+            /*
+             * Same key + different request hash means the user is trying to create a different short URL with the same idempotency key, which is not allowed
+             */
             if(!existing.getRequestHash().equals(requestHash)){
                 throw new IdempotencyKeyConflictException("Idempotency key was already used with a different request.");
             }
 
+            /*
+             * Request already completed.
+             */
 
-            System.out.println("Existing status: " + existing.getStatus());
             if(existing.getStatus() == IdempotencyStatus.COMPLETED){
                 return new CreateUrlResponse(existing.getShortCode(), "http://localhost:8080/" + existing.getShortCode());
             }
 
-
+            /*
+             * This can only normally happen if we have
+             * an old/stale PROCESSING record.
+             */
             if(existing.getStatus() == IdempotencyStatus.PROCESSING){
                 throw new IdempotencyRequestInProgressException("Request with this idempotency key is already being processed");
             }
@@ -72,7 +77,6 @@ public class UrlCreationTransactionService {
         /*
          * We successfully claimed the idempotency key.
          */
-        System.out.println("Generating a new URL");
 
         Long id = snowflakeIdGenerator.generateId();
 
@@ -92,7 +96,6 @@ public class UrlCreationTransactionService {
          * Mark idempotency request as completed.
          */
 
-        System.out.println("Marking idempotency request as completed.");
         IdempotencyRequest idempotencyRequest = idempotencyRepository
                         .findByIdempotencyKey(idempotencyKey)
                         .orElseThrow(() -> new IllegalArgumentException("Failed to retrieve idempotency record."));
@@ -101,7 +104,6 @@ public class UrlCreationTransactionService {
         idempotencyRequest.setStatus(IdempotencyStatus.COMPLETED);
 
         idempotencyRepository.save(idempotencyRequest);
-        System.out.println("Idempotency request marked as completed.");
 
         return new CreateUrlResponse(shortCode, "http://localhost:8080/" + shortCode);
     }
